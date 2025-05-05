@@ -1,0 +1,56 @@
+Image: Screenshot from 2025-05-05 12-25-01.png
+   Lower HSV bound: (18, 5, 82)
+   Upper HSV bound: (70, 126, 143)
+
+Image: Screenshot from 2025-05-05 12-24-39.png
+   Lower HSV bound: (18, 18, 92)
+   Upper HSV bound: (33, 117, 141)
+
+Image: Screenshot from 2025-05-05 12-24-48.png
+   Lower HSV bound: (0, 0, 63)
+   Upper HSV bound: (178, 97, 159)
+
+Image: Screenshot from 2025-05-05 12-24-17.png
+   Lower HSV bound: (12, 22, 81)
+   Upper HSV bound: (33, 102, 129)
+
+Image: Screenshot from 2025-05-05 12-25-09.png
+   Lower HSV bound: (4, 5, 79)
+   Upper HSV bound: (168, 113, 158)
+
+Image: Screenshot from 2025-05-05 12-24-11.png
+   Lower HSV bound: (11, 36, 76)
+   Upper HSV bound: (30, 127, 123)
+
+Image: Screenshot from 2025-05-05 12-24-30.png
+   Lower HSV bound: (7, 11, 70)
+   Upper HSV bound: (64, 104, 157)
+
+Image: Screenshot from 2025-05-05 12-23-57.png
+   Lower HSV bound: (19, 30, 96)
+   Upper HSV bound: (35, 115, 144)
+
+Image: Screenshot from 2025-05-05 12-26-51.png
+   Lower HSV bound: (14, 18, 79)
+   Upper HSV bound: (39, 112, 136)
+
+Image: Screenshot from 2025-05-05 12-23-49.png
+   Lower HSV bound: (11, 21, 69)
+   Upper HSV bound: (40, 127, 180)
+
+Image: Screenshot from 2025-05-05 12-26-58.png
+   Lower HSV bound: (12, 44, 71)
+   Upper HSV bound: (34, 108, 129)
+
+Image: Screenshot from 2025-05-05 12-24-04.png
+   Lower HSV bound: (11, 8, 92)
+   Upper HSV bound: (64, 117, 160)
+
+===============================
+📌 Final HSV Range to Detect All Handles
+🔻 Lower Bound: (0, 0, 63)
+🔺 Upper Bound: (178, 127, 180)
+===============================
+
+Lower HSV bound: (11, 8, 92)
+Upper HSV bound: (64, 117, 160)
