@@ -155,27 +155,25 @@ class Video():
             print(f"Image saved as {file_name}")
         else:
             print("No frame to capture!")
-    from openpyxl import Workbook, load_workbook
-
 
     def log_to_excel(self, x, y, area, filename='object_data_xcm.xlsx'):
-        """Logs the centroid and area data to an Excel file"""
-        file_exists = os.path.exists(filename)
+            """Logs the centroid and area data to an Excel file"""
+            file_exists = os.path.exists(filename)
 
-        # Load existing workbook or create a new one
-        if file_exists:
-            wb = load_workbook(filename)
-            ws = wb.active
-        else:
-            wb = Workbook()
-            ws = wb.active
-            # Write headers only if new
-            ws.append(["Centroid X", "Centroid Y", "Area"])
+            # Load existing workbook or create a new one
+            if file_exists:
+                wb = load_workbook(filename)
+                ws = wb.active
+            else:
+                wb = Workbook()
+                ws = wb.active
+                # Write headers only if new
+                ws.append(["Centroid X", "Centroid Y", "Area"])
 
-        # Append the new data
-        ws.append([x, y, area])
-        wb.save(filename)
-        print(f"Logged blob at ({x}, {y}) with area {area} to {filename}")
+            # Append the new data
+            ws.append([x, y, area])
+            wb.save(filename)
+            print(f"Logged blob at ({x}, {y}) with area {area} to {filename}")
 
     #Añadido por GPT4
     def detect_red_color(self, frame):
@@ -273,7 +271,6 @@ class Video():
 
                 # Print centroid and area of the blob
                 print(f"Blob found at ({cX}, {cY}) with area: {area}")
-                #self.log_to_excel(cX, cY, area)
 
                 # Optional: Draw the contour and centroid on the frame
                 cv2.drawContours(frame, [contour], -1, (0, 255, 0), 2)
@@ -316,37 +313,21 @@ class Video():
 
         # Convert frame to HSV color space
         hsv_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-
-        height, width, _ = frame.shape
-
-        # Define central ROI (e.g., center 50% of width and height)
-        roi_x1 = int(width )#* 0.49)
-        roi_y1 = int(height)# * 0.4)
-        roi_x2 = int(width)# * 0.51)
-        roi_y2 = int(height)
-
+        
+        lower_yellow = np.array([11, 8, 92])
+        upper_yellow = np.array([64, 117, 160])
+        
         # Yellow color range in HSV
         lower_yellow = np.array([20, 100, 100])
         upper_yellow = np.array([35, 255, 255])
-
-        # Yellow color range in HSV
-        #lower_yellow = np.array([11, 8, 92])
-        #upper_yellow = np.array([64, 117, 160])
+        
+        
         
 
-        # Create mask for yellow color
-        yellow_mask_full = cv2.inRange(hsv_frame, lower_yellow, upper_yellow)
+        yellow_mask = cv2.inRange(hsv_frame, lower_yellow, upper_yellow)
 
-        # Create mask for central region only
-        center_mask = np.zeros((height, width), dtype=np.uint8)
-        center_mask[roi_y1:roi_y2, roi_x1:roi_x2] = 255
-
-        # Combine the color mask with the center mask
-        yellow_mask_center = cv2.bitwise_and(yellow_mask_full, yellow_mask_full, mask=center_mask)
-
-        # Find contours in the center-only yellow mask
-        contours, _ = cv2.findContours(yellow_mask_center, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
+        # Find contours in the mask
+        contours, _ = cv2.findContours(yellow_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
 
         total_area = 0
@@ -380,10 +361,9 @@ class Video():
             weighted_avg_x = weighted_sum_x / total_area
             weighted_avg_y = weighted_sum_y / total_area
             weighted_center = (int(weighted_avg_x), int(weighted_avg_y))
-            print(f"Weighted center of all yellow blobs: {weighted_center}")
             print(f"Total area of all yellow blobs: {total_area}")
-            #self.log_to_excel(cX, cY, total_area)
-
+            print(f"Weighted center of all yellow blobs: {weighted_center}")
+            self.log_to_excel(cX, cY, total_area)
 
             # Draw the weighted center on the frame
             cv2.circle(frame, weighted_center, 7, (0, 0, 255), -1)
@@ -396,6 +376,7 @@ class Video():
         cv2.circle(frame, image_center, 5, (255, 0, 0), -1)
 
         
+
         return frame
 
 

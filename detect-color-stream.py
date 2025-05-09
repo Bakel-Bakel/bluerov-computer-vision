@@ -292,12 +292,16 @@ class Video():
 
         # Convert frame to HSV color space
         hsv_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-
+        
+        lower_yellow = np.array([11, 8, 92])
+        upper_yellow = np.array([64, 117, 160])
+        
         # Yellow color range in HSV
         lower_yellow = np.array([20, 100, 100])
         upper_yellow = np.array([35, 255, 255])
         
-
+        
+        
 
         yellow_mask = cv2.inRange(hsv_frame, lower_yellow, upper_yellow)
 
@@ -373,13 +377,13 @@ if __name__ == '__main__':
         if video.frame_available():
             # Only retrieve and display a frame if it's new
             frame = video.frame() 
-            #video.detect_yellow_color(frame)
-            video.detect_green_color(frame)
+            video.detect_yellow_color(frame)
+            #video.detect_green_color(frame)
             #video.detect_orange_color(frame)
             #video.detect_red_color(frame)
             #video.detect_blue_color(frame)
             cv2.imshow('frame', frame)
-            video.capture_image(frame)
+            #video.capture_image(frame)
 
         # Allow frame to display, and check if user wants to quit
         key = cv2.waitKey(1) & 0xFF
