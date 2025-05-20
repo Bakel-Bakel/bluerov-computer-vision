@@ -165,7 +165,10 @@ def compute_distance_control(current_distance):
     """Compute PID control for distance"""
     global distance_previous_error, distance_integral
     
-    error = distance_setpoint - current_distance
+    # Invert the error sign so that:
+    # - When distance > setpoint (too far), error is negative -> move forward
+    # - When distance < setpoint (too close), error is positive -> move backward
+    error = -(distance_setpoint - current_distance)
     distance_integral += error * distance_dt
     derivative = (error - distance_previous_error) / distance_dt
     
