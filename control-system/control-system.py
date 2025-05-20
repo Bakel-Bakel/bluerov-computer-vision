@@ -95,12 +95,33 @@ def detect_yellow_color(frame):
                 weighted_sum_x += cX * area
                 weighted_sum_y += cY * area
                 total_area += area
+                
+                # Draw the contour and centroid on the frame
+                cv2.drawContours(frame, [contour], -1, (0, 255, 0), 2)
+                cv2.circle(frame, (cX, cY), 7, (255, 255, 255), -1)
+                
+                # Display area for each contour
+                cv2.putText(frame, f"Area: {int(area)}", (cX - 20, cY - 20),
+                          cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
     
     # Calculate weighted center if any yellow was detected
     if total_area > 0:
         weighted_avg_x = weighted_sum_x / total_area
         weighted_avg_y = weighted_sum_y / total_area
-        return (int(weighted_avg_x), int(weighted_avg_y)), total_area
+        weighted_center = (int(weighted_avg_x), int(weighted_avg_y))
+        
+        # Draw the weighted center on the frame
+        cv2.circle(frame, weighted_center, 7, (0, 0, 255), -1)
+        
+        # Draw the image center
+        image_center = (frame.shape[1] // 2, frame.shape[0] // 2)
+        cv2.circle(frame, image_center, 5, (255, 0, 0), -1)
+        
+        # Display total area at the top of the frame
+        cv2.putText(frame, f"Total Area: {int(total_area)}", (10, 30),
+                   cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+        
+        return weighted_center, total_area
     
     return None, 0
 
