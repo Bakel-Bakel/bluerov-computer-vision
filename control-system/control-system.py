@@ -15,7 +15,7 @@ from gi.repository import Gst
 Gst.init(None)
 
 # Connect to the Vehicle autopilot.
-connection_string="192.168.3.20:14552"
+connection_string="192.168.3.10:14551"
 print("Connecting to vehicle on: %s" % (connection_string,))
 autopilot = dronekit.connect(connection_string, wait_ready=False)
 
@@ -29,16 +29,28 @@ print ("%s" % autopilot.armed)
 print(autopilot.location.global_relative_frame.alt)
 
 # PID Constants for depth control
-Kp = 100
-Ki = 25
-Kd = 0
-setpoint = -1  # Desired depth (e.g., 1 meter)
+Kp_depth = 100
+Ki_depth = 25
+Kd_depth = 0
+depth_setpoint = -0.4  # Desired depth (e.g., 1 meter)
 dt = 0.1      # Time step in seconds
 
-# PID Variables
-previous_error = 0
-integral = 0
+# PID Constants for distance control
+Kp_dist = 0.5
+Ki_dist = 0.1
+Kd_dist = 0.05
+distance_setpoint = 0.1  # Desired distance in meters (10cm)
+distance_dt = 0.1
+
+# PID Variables for depth
+depth_previous_error = 0
+depth_integral = 0
 current_depth = autopilot.location.global_relative_frame.alt  # Initial depth
+
+# PID Variables for distance
+distance_previous_error = 0
+distance_integral = 0
+current_distance = 0
 
 # Video capture setup
 port = 5600
@@ -64,6 +76,12 @@ def gst_to_opencv(sample):
         ),
         buffer=buf.extract_dup(0, buf.get_size()), dtype=np.uint8)
     return array
+
+def calculate_distance(area):
+    """Calculate distance based on area using the given formula"""
+    if area > 0:
+        return 1329.34 * (area ** (-0.3326))
+    return float('inf')
 
 def detect_yellow_color(frame):
     """Detect yellow color and return center coordinates and area"""
@@ -117,25 +135,45 @@ def detect_yellow_color(frame):
         image_center = (frame.shape[1] // 2, frame.shape[0] // 2)
         cv2.circle(frame, image_center, 5, (255, 0, 0), -1)
         
-        # Display total area at the top of the frame
+        # Calculate and display distance
+        distance = calculate_distance(total_area)
+        
+        # Display total area and distance at the top of the frame
         cv2.putText(frame, f"Total Area: {int(total_area)}", (10, 30),
                    cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+        cv2.putText(frame, f"Distance: {distance:.2f}m", (10, 70),
+                   cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
         
-        return weighted_center, total_area
+        return weighted_center, total_area, distance
     
-    return None, 0
+    return None, 0, float('inf')
 
 def compute_depth_control(current_depth):
     """Compute PID control for depth"""
-    global previous_error, integral
+    global depth_previous_error, depth_integral
     
-    error = setpoint - current_depth
-    integral += error * dt
-    derivative = (error - previous_error) / dt
+    error = depth_setpoint - current_depth
+    depth_integral += error * dt
+    derivative = (error - depth_previous_error) / dt
     
-    output = (Kp * error) + (Ki * integral) + (Kd * derivative)
-    previous_error = error
+    output = (Kp_depth * error) + (Ki_depth * depth_integral) + (Kd_depth * derivative)
+    depth_previous_error = error
     
+    return round(output)
+
+def compute_distance_control(current_distance):
+    """Compute PID control for distance"""
+    global distance_previous_error, distance_integral
+    
+    error = distance_setpoint - current_distance
+    distance_integral += error * distance_dt
+    derivative = (error - distance_previous_error) / distance_dt
+    
+    output = (Kp_dist * error) + (Ki_dist * distance_integral) + (Kd_dist * derivative)
+    distance_previous_error = error
+    
+    # Limit the output to reasonable values
+    output = max(min(output, 100), -100)
     return round(output)
 
 def main():
@@ -146,8 +184,8 @@ def main():
             if sample:
                 frame = gst_to_opencv(sample)
                 
-                # Detect yellow color
-                yellow_center, yellow_area = detect_yellow_color(frame)
+                # Detect yellow color and get distance
+                yellow_center, yellow_area, current_distance = detect_yellow_color(frame)
                 
                 # Get current depth
                 current_depth = autopilot.location.global_relative_frame.alt
@@ -158,12 +196,21 @@ def main():
                 # Apply depth control
                 gii_bluerov.move_rov(autopilot, "z", "displacement", depth_control)
                 
-                # Print status
-                print(f"Depth: {current_depth:.3f}m | Control: {depth_control:.3f}")
-                if yellow_center:
-                    print(f"Yellow detected at {yellow_center} with area: {yellow_area}")
+                # If yellow is detected, control distance
+                if yellow_center is not None:
+                    distance_control = compute_distance_control(current_distance)
+                    # Use x-axis for forward/backward movement
+                    gii_bluerov.move_rov(autopilot, "x", "displacement", distance_control)
+                else:
+                    # Stop forward/backward movement if no yellow detected
+                    gii_bluerov.move_rov(autopilot, "x", "displacement", 0)
                 
-                # Display frame (optional)
+                # Print status
+                print(f"Depth: {current_depth:.3f}m | Depth Control: {depth_control:.3f}")
+                if yellow_center:
+                    print(f"Distance: {current_distance:.3f}m | Distance Control: {distance_control:.3f}")
+                
+                # Display frame
                 cv2.imshow('Frame', frame)
                 
                 # Break loop on 'q' press
@@ -176,6 +223,7 @@ def main():
         print("\nStopping...")
     finally:
         # Cleanup
+        gii_bluerov.stop_rov(autopilot)
         autopilot.armed = False
         video_pipe.set_state(Gst.State.NULL)
         cv2.destroyAllWindows()
